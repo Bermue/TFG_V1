@@ -1,0 +1,42 @@
+import cv2
+import numpy as np
+
+# Cargar las imágenes izquierda y derecha
+img_left = cv2.imread('DB/IMG_1176.jpeg')
+img_right = cv2.imread('DB/IMG_1177.jpeg')
+
+# Convertir las imágenes a escala de grises
+gray_left = cv2.cvtColor(img_left, cv2.COLOR_BGR2GRAY)
+gray_right = cv2.cvtColor(img_right, cv2.COLOR_BGR2GRAY)
+
+# Crear un objeto StereoSGBM para calcular la disparidad
+stereo = cv2.StereoSGBM_create(
+    minDisparity=0,
+    numDisparities=16,  # El número máximo de disparidades a buscar
+    blockSize=5,        # Tamaño de la ventana de disparidad (debe ser impar)
+    uniquenessRatio=5,
+    speckleWindowSize=5,
+    speckleRange=5,
+    disp12MaxDiff=10,
+    P1=8 * 3 * 5 ** 2,
+    P2=32 * 3 * 5 ** 2
+)
+
+
+
+# Calcular la disparidad
+disparity = stereo.compute(gray_left, gray_right)
+
+
+
+# Normalizar la disparidad para mostrarla adecuadamente
+disparity_normalized = cv2.normalize(disparity, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U)
+
+
+# Mostrar la disparidad
+cv2.imshow('Disparidad', disparity_normalized)
+
+cv2.waitKey(0)
+cv2.destroyAllWindows()
+
+

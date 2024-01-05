@@ -1,0 +1,76 @@
+import cv2
+
+# Suponiendo que tienes las coordenadas del cuadro delimitador del objeto detectado en ambas imágenes
+left_bbox = (x_min_left, y_min_left, x_max_left, y_max_left)
+right_bbox = (x_min_right, y_min_right, x_max_right, y_max_right)
+
+# Calcular el punto central del cuadro delimitador en ambas imágenes
+left_center_x = (x_min_left + x_max_left) / 2
+right_center_x = (x_min_right + x_max_right) / 2
+left_center_y = (y_min_left + y_max_left) / 2
+right_center_y = (y_min_right + y_max_right) / 2
+
+# Calcular la disparidad (diferencia horizontal entre los centros)
+disparity = abs(left_center_x - right_center_x)
+
+# Parámetros intrínsecos y extrínsecos de la cámara
+focal_length = 500  # Distancia focal de la cámara en píxeles (debe estar calibrada)(50mm en pixels: 188.97)
+baseline = 0.1  # Línea base en metros (distancia física entre las cámaras)
+
+# Calcular la profundidad en metros utilizando la fórmula de triangulación estéreo
+depth = (focal_length * baseline) / disparity
+
+# Mostrar la profundidad calculada
+print(f"Profundidad estimada: {depth} metros")
+
+-----------------------------------------------------------------------------
+-----------------------------------------------------------------------------
+-----------------------------------------------------------------------------
+-----------------------------------------------------------------------------
+
+
+
+import cv2
+import torch
+from ultralytics import YOLO
+
+# Función para calcular la profundidad
+def calcular_profundidad(left_bbox, right_bbox, focal_length, baseline):
+    # Calcular el punto central del cuadro delimitador en ambas imágenes
+    left_center_x = (left_bbox[0] + left_bbox[2]) / 2
+    right_center_x = (right_bbox[0] + right_bbox[2]) / 2
+
+    # Calcular la disparidad (diferencia horizontal entre los centros)
+    disparity = abs(left_center_x - right_center_x)
+
+    # Calcular la profundidad en metros utilizando la fórmula de triangulación estéreo
+    depth = (focal_length * baseline) / disparity
+    return depth
+
+# Cargar imágenes izquierda y derecha
+img_left = cv2.imread('left_image.png')
+img_right = cv2.imread('right_image.png')
+
+# Inicializar YOLOv8n
+model = YOLO("weights/best90.pt")
+model.fuse()
+
+# Detectar objetos en la imagen izquierda
+results_left = model(img_left)
+
+# Detectar objetos en la imagen derecha
+results_right = model(img_right)
+
+# Supongamos que obtenemos las coordenadas del cuadro delimitador para el mismo objeto en ambas imágenes
+left_bbox = (x_min_left, y_min_left, x_max_left, y_max_left)
+right_bbox = (x_min_right, y_min_right, x_max_right, y_max_right)
+
+# Parámetros intrínsecos y extrínsecos de la cámara (debe estar calibrada)
+focal_length = 500  # Distancia focal de la cámara en píxeles
+baseline = 0.1  # Línea base en metros (distancia física entre las cámaras)
+
+# Calcular profundidad para el objeto detectado
+depth = calcular_profundidad(left_bbox, right_bbox, focal_length, baseline)
+
+# Mostrar la profundidad calculada
+print(f"Profundidad estimada: {depth} metros")

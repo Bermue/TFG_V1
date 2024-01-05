@@ -1,0 +1,406 @@
+from typing import Any
+import cv2
+import torch
+from ultralytics import YOLO
+import numpy as np
+
+class ObjectDetection:
+    def __init__(self, capture_index):
+        self.capture_index = capture_index
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        print("Using Device: ", self.device)
+        self.model = self.load_model()
+
+        # Configurar parámetros para visión estéreo
+        self.stereo = cv2.StereoSGBM_create(numDisparities=16, blockSize=15)
+
+    def load_model(self):
+        model = YOLO("yolov8n.pt")  # load a pretrained YOLOv8n
+        model.fuse()
+        return model
+
+    def predict(self, frame):
+        results = self.model(frame)
+        return results
+
+    def plot_boxes(self, frame, results):
+        xyxys = []
+        confidences = []
+        class_ids = []
+
+        for result in results:
+            boxes = result.boxes.cpu().numpy()
+            xyxys.append(boxes.xyxy)
+            confidences.append(boxes.conf)
+            class_ids.append(boxes.cls)
+
+        return results[0].plot(), xyxys, confidences, class_ids
+
+    def calculate_depth(self, frame_left, frame_right):
+        gray_left = cv2.cvtColor(frame_left, cv2.COLOR_BGR2GRAY)
+        gray_right = cv2.cvtColor(frame_right, cv2.COLOR_BGR2GRAY)
+        disparity = self.stereo.compute(gray_left, gray_right)
+        depth = cv2.convertScaleAbs(disparity, alpha=0.03)
+        return depth
+
+    def __call__(self):
+        print("Starting Camera")
+        cap = cv2.VideoCapture(self.capture_index)
+        assert cap.isOpened(), "Cannot open camera"
+
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
+
+            # Realizar la detección de objetos con YOLO
+            results = self.predict(frame)
+            frame_with_boxes, xyxys, confidences, class_ids = self.plot_boxes(frame, results)
+
+            # Obtener imágenes de las cámaras izquierda y derecha
+            ret_left, frame_left = cap.read()
+            ret_right, frame_right = cap.read()
+
+            if ret_left and ret_right:
+                # Calcular la profundidad
+                depth = self.calculate_depth(frame_left, frame_right)
+
+                # Mostrar la imagen a color con las cajas delimitadoras y la imagen de profundidad
+                cv2.imshow('Object Detection', frame_with_boxes)
+                cv2.imshow('Depth Map', cv2.cvtColor(depth, cv2.COLOR_GRAY2BGR))
+
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+
+        cap.release()
+        cv2.destroyAllWindows()
+
+if __name__ == "__main__":
+    # Ejemplo de cómo usar la clase ObjectDetection
+    obj_detection = ObjectDetection(capture_index=0)  # Reemplaza 0 con el índice de tu cámara
+    obj_detection()  # Esto llamará al método __call__
+-------------------------------------------------
+-------------------------------------------------
+--------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------
+
+
+from typing import Any
+import cv2
+import torch
+from ultralytics import YOLO
+import numpy as np
+
+class ObjectDetection:
+    def __init__(self, capture_index):
+        self.capture_index = capture_index
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        print("Using Device: ", self.device)
+        self.model = self.load_model()
+
+        # Configurar parámetros para visión estéreo
+        self.stereo = cv2.StereoSGBM_create(numDisparities=16, blockSize=15)
+
+    def load_model(self):
+        model = YOLO("yolov8n.pt")  # load a pretrained YOLOv8n
+        model.fuse()
+        return model
+
+    def predict(self, frame):
+        results = self.model(frame)
+        return results
+
+    def plot_boxes(self, frame, results):
+        xyxys = []
+        confidences = []
+        class_ids = []
+
+        for result in results:
+            boxes = result.boxes.cpu().numpy()
+            xyxys.append(boxes.xyxy)
+            confidences.append(boxes.conf)
+            class_ids.append(boxes.cls)
+
+        return results[0].plot(), xyxys, confidences, class_ids
+
+    def calculate_depth(self, frame_left, frame_right):
+        gray_left = cv2.cvtColor(frame_left, cv2.COLOR_BGR2GRAY)
+        gray_right = cv2.cvtColor(frame_right, cv2.COLOR_BGR2GRAY)
+        disparity = self.stereo.compute(gray_left, gray_right)
+        depth = cv2.convertScaleAbs(disparity, alpha=0.03)
+        return depth
+
+    def __call__(self):
+        print("Starting Camera")
+        cap = cv2.VideoCapture(self.capture_index)
+        assert cap.isOpened(), "Cannot open camera"
+
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
+
+            # Realizar la detección de objetos con YOLO
+            results = self.predict(frame)
+            frame_with_boxes, xyxys, confidences, class_ids = self.plot_boxes(frame, results)
+
+            # Obtener imágenes de las cámaras izquierda y derecha
+            ret_left, frame_left = cap.read()
+            ret_right, frame_right = cap.read()
+
+            if ret_left and ret_right:
+                # Calcular la profundidad
+                depth = self.calculate_depth(frame_left, frame_right)
+
+                # Mostrar la imagen con las cajas delimitadoras y la imagen de profundidad
+                cv2.imshow('Object Detection', frame_with_boxes)
+                cv2.imshow('Depth Map', depth)
+
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+
+        cap.release()
+        cv2.destroyAllWindows()
+
+if __name__ == "__main__":
+    # Ejemplo de cómo usar la clase ObjectDetection
+    obj_detection = ObjectDetection(capture_index=0)  # Reemplaza 0 con el índice de tu cámara
+    obj_detection()  # Esto llamará al método __call__
+
+-------------------------------------------------
+--------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------
+-------------------------------ROBOFLOW-------------------------
+#!pip install roboflow
+
+#from roboflow import Roboflow
+#rf = Roboflow(api_key="u1hBOojuUJhqWkuTHEgy")
+#project = rf.workspace("testt").project("tey-pwsqw")
+#dataset = project.version(1).download("yolov8")
+
+
+
+
+
+
+
+-------------------------------------------------
+--------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------
+
+
+
+
+from typing import Any
+import cv2
+import torch
+from ultralytics import YOLO
+import numpy as np
+from time import time
+
+
+class ObjectDetection:
+    def __init__(self, capture_index):
+        self.capture_index = capture_index
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        print("Using Device: ", self.device)
+        self.model = self. load_model ()
+
+    def load_model(self):
+        model = YOLO("yolov8n.pt") # load a pretrained YOLOv8n
+        model.fuse()
+        return model
+    
+    def predict(self, frame):
+        results = self.model(frame)
+        return results
+    
+    def plot_boxes(self, frame, results):
+        xyxys = []
+        confidences = []
+        class_ids = []
+
+        for result in results:
+            boxes = result.boxes.cpu().numpy()
+
+            #xyxys  = boxes.xyxy
+
+            #for xyxy in xyxys:
+            #   frame = cv2.rectangle(frame, (int(xyxy[0]), int(xyxy[1])), (int(xyxy[2]), int(xyxy[3])), (0, 255, 0), 2)
+            xyxys.append(boxes.xyxy)
+            confidences.append(boxes.conf)
+            class_ids.append(boxes.cls)
+        
+        
+        return results[0].plot(), xyxys, confidences, class_ids
+    
+
+    print("Loaded Model")
+    def __call__(self):
+        print("Starting Camera")
+        cap = cv2.VideoCapture(self.capture_index)
+        assert cap.isOpened(), "Cannot open camera"
+
+        window_width = 720  # Ancho deseado
+        window_height = 480  # Alto deseado
+
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
+
+
+            frame_resized = cv2.resize(frame, (window_width, window_height))
+            
+            # Realizar la detección de objetos
+            results = self.predict(frame_resized)
+            frame_with_boxes, xyxys, confidences, class_ids = self.plot_boxes(frame, results)
+
+            # Aquí podrías hacer algo con los resultados, por ejemplo, mostrar la imagen con las cajas delimitadoras
+            cv2.imshow('Object Detection', frame_with_boxes)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+
+        cap.release()
+        cv2.destroyAllWindows()
+
+if __name__ == "__main__":
+    # Ejemplo de cómo usar la clase ObjectDetection
+    obj_detection = ObjectDetection(capture_index=0)  # Reemplaza 0 con el índice de tu cámara
+    obj_detection()  # Esto llamará al método __call__
+
+        
+
+
+
+--------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+from typing import Any
+import cv2
+import torch
+from ultralytics import YOLO
+import numpy as np
+from time import time
+
+
+class ObjectDetection:
+    def __init__(self, capture_index):
+        self.capture_index = capture_index
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        print("Using Device: ", self.device)
+        self.model = self. load_model ()
+
+    def load_model(self):
+        model = YOLO("weights/best90.pt") # load a pretrained YOLOv8n
+        model.fuse()
+        return model
+    
+    def predict(self, frame):
+        results = self.model(frame)
+        return results
+    
+    def plot_boxes(self, frame, results):
+        xyxys = []
+        confidences = []
+        class_ids = []
+        centers = []
+
+        for result in results:
+            boxes = result.boxes.cpu().numpy()
+
+            xyxyss  = boxes.xyxy
+
+            for xyxy in xyxyss:
+               centro_x = (int(xyxy[0]) + int(xyxy[2]))/2
+               centro_y = (int(xyxy[1]) + int(xyxy[3]))/2
+               centers.append((centro_x, centro_y))
+
+            #print(centers)
+            xyxys.append(boxes.xyxy)
+            confidences.append(boxes.conf)
+            class_ids.append(boxes.cls)
+        
+        
+        return results[0].plot(), xyxys, confidences, class_ids
+    
+
+    print("Loaded Model")
+    def __call__(self):
+
+        cap2= cv2.imread("DB/IMG_1176.jpeg")
+
+
+
+
+        print("Starting Camera")
+        cap = cv2.VideoCapture(self.capture_index)
+        assert cap.isOpened(), "Cannot open camera"
+
+        #window_width = 720  # Ancho deseado
+        #window_height = 480  # Alto deseado
+
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
+
+
+            #frame_resized = cv2.resize(frame, (window_width, window_height))
+            
+            # Realizar la detección de objetos
+            results = self.predict(frame)
+            
+            frame_with_boxes, xyxys, confidences, class_ids = self.plot_boxes(frame, results)
+            #print(xyxys)
+
+            # Aquí podrías hacer algo con los resultados, por ejemplo, mostrar la imagen con las cajas delimitadoras
+            cv2.imshow('Object Detection', frame_with_boxes)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+
+        cap.release()
+        cv2.destroyAllWindows()
+
+if __name__ == "__main__":
+    # Ejemplo de cómo usar la clase ObjectDetection
+    obj_detection = ObjectDetection(capture_index=0)  # Reemplaza 0 con el índice de tu cámara
+    obj_detection()  # Esto llamará al método __call__
+
+        
