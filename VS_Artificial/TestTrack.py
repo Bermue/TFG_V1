@@ -11,7 +11,7 @@ from ultralytics import YOLO
 
 # Cargar el modelo YOLOv8
 #model = YOLO('yolov8n.pt')
-model = YOLO('weights/best90.pt')
+model = YOLO('yolov8n.pt')
 
 # Abrir el video desde la cámara
 cap = cv2.VideoCapture(0)
