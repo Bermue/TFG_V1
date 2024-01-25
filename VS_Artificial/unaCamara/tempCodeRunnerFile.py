@@ -1,0 +1,1 @@
+frame_with_boxes, xyxys, confidences, class_ids 
